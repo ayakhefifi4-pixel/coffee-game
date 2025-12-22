@@ -162,7 +162,7 @@
                 <p><strong>Mission:</strong> Catch 15 coffees ☕ before time runs out!</p>
                 <p><strong>Watch out:</strong> Avoid the bugs 🐛 (they'll cost you a life!)</p>
                 <p><strong>Controls:</strong> Use arrow keys ← → or move your mouse</p>
-                <p style="margin-top: 20px; color: #4CAF50;"><strong>Win = Coffee date with me! 💕</strong></p>
+                <p style="margin-top: 20px; color: #4CAF50;"><strong>Win = Coffee time! </strong></p>
                 <p style="color: #f44336;"><strong>Lose = Debugging practice! 🐛💻</strong></p>
             </div>
             <button onclick="startGame()">Start Game!</button>
@@ -171,7 +171,7 @@
         <div class="end-screen hidden" id="endScreen">
             <div class="emoji" id="resultEmoji">☕</div>
             <h1 id="resultTitle">You Won!</h1>
-            <p id="resultMessage">Great! Let's go for that coffee! ☕💕</p>
+            <p id="resultMessage">Great! Let's get that coffee! ☕</p>
             <button onclick="restartGame()">Play Again</button>
         </div>
     </div>
@@ -331,7 +331,7 @@
             const resultMessage = document.getElementById('resultMessage');
             
             if (won) {
-                resultEmoji.textContent = '🎉☕💕';
+                resultEmoji.textContent = '☕';
                 resultTitle.textContent = 'You Won!';
                 resultMessage.textContent = "Amazing! You caught enough coffees! ☕ Now let's go on that coffee date! 💕";
             } else {
@@ -351,4 +351,5 @@
         }
     </script>
 </body>
+
 </html>
