@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Catcher Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6b4423 0%, #3e2723 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-screen {
+            background: white;
+            width: 400px;
+            height: 600px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-header {
+            background: #6b4423;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .score {
+            font-weight: bold;
+        }
+
+        .game-area {
+            width: 100%;
+            height: 485px;
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        .player {
+            position: absolute;
+            bottom: 10px;
+            width: 60px;
+            height: 60px;
+            font-size: 50px;
+            transition: left 0.1s;
+            user-select: none;
+        }
+
+        .coffee {
+            position: absolute;
+            font-size: 40px;
+            user-select: none;
+            animation: fall linear;
+        }
+
+        @keyframes fall {
+            to {
+                top: 100%;
+            }
+        }
+
+        .bug {
+            position: absolute;
+            font-size: 35px;
+            user-select: none;
+            animation: fall linear;
+        }
+
+        .start-screen, .end-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+        }
+
+        .start-screen h1, .end-screen h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .start-screen p, .end-screen p {
+            font-size: 18px;
+            margin: 10px 20px;
+            text-align: center;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+
+        .emoji {
+            font-size: 80px;
+            margin: 20px;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-screen">
+        <div class="game-header">
+            <div class="score">☕ Score: <span id="score">0</span></div>
+            <div class="score">❤️ Lives: <span id="lives">3</span></div>
+            <div class="score">⏱️ <span id="timer">30</span>s</div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="player" id="player">🙋</div>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <div class="emoji">☕</div>
+            <h1>Coffee Date Challenge!</h1>
+            <div class="instructions">
+                <p><strong>Mission:</strong> Catch 15 coffees ☕ before time runs out!</p>
+                <p><strong>Watch out:</strong> Avoid the bugs 🐛 (they'll cost you a life!)</p>
+                <p><strong>Controls:</strong> Use arrow keys ← → or move your mouse</p>
+                <p style="margin-top: 20px; color: #4CAF50;"><strong>Win = Coffee date with me! 💕</strong></p>
+                <p style="color: #f44336;"><strong>Lose = Debugging practice! 🐛💻</strong></p>
+            </div>
+            <button onclick="startGame()">Start Game!</button>
+        </div>
+
+        <div class="end-screen hidden" id="endScreen">
+            <div class="emoji" id="resultEmoji">☕</div>
+            <h1 id="resultTitle">You Won!</h1>
+            <p id="resultMessage">Great! Let's go for that coffee! ☕💕</p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const gameArea = document.getElementById('gameArea');
+        const startScreen = document.getElementById('startScreen');
+        const endScreen = document.getElementById('endScreen');
+        
+        let playerPos = 170;
+        let score = 0;
+        let lives = 3;
+        let timeLeft = 30;
+        let gameRunning = false;
+        let gameInterval;
+        let timerInterval;
+        let spawnInterval;
+
+        // Move player with arrow keys
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            if (e.key === 'ArrowLeft' && playerPos > 0) {
+                playerPos -= 20;
+            } else if (e.key === 'ArrowRight' && playerPos < 340) {
+                playerPos += 20;
+            }
+            player.style.left = playerPos + 'px';
+        });
+
+        // Move player with mouse
+        gameArea.addEventListener('mousemove', (e) => {
+            if (!gameRunning) return;
+            const rect = gameArea.getBoundingClientRect();
+            playerPos = Math.max(0, Math.min(340, e.clientX - rect.left - 30));
+            player.style.left = playerPos + 'px';
+        });
+
+        function startGame() {
+            startScreen.classList.add('hidden');
+            score = 0;
+            lives = 3;
+            timeLeft = 30;
+            gameRunning = true;
+            updateDisplay();
+            
+            // Spawn items
+            spawnInterval = setInterval(() => {
+                if (Math.random() > 0.3) {
+                    spawnCoffee();
+                } else {
+                    spawnBug();
+                }
+            }, 1000);
+
+            // Timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+
+            // Game loop
+            gameInterval = setInterval(checkCollisions, 50);
+        }
+
+        function spawnCoffee() {
+            const coffee = document.createElement('div');
+            coffee.className = 'coffee';
+            coffee.textContent = '☕';
+            coffee.style.left = Math.random() * 360 + 'px';
+            coffee.style.top = '-40px';
+            coffee.dataset.type = 'coffee';
+            
+            const duration = 3 + Math.random() * 2;
+            coffee.style.animationDuration = duration + 's';
+            
+            gameArea.appendChild(coffee);
+            
+            setTimeout(() => {
+                if (coffee.parentNode) coffee.remove();
+            }, duration * 1000);
+        }
+
+        function spawnBug() {
+            const bug = document.createElement('div');
+            bug.className = 'bug';
+            bug.textContent = '🐛';
+            bug.style.left = Math.random() * 360 + 'px';
+            bug.style.top = '-40px';
+            bug.dataset.type = 'bug';
+            
+            const duration = 2.5 + Math.random() * 1.5;
+            bug.style.animationDuration = duration + 's';
+            
+            gameArea.appendChild(bug);
+            
+            setTimeout(() => {
+                if (bug.parentNode) bug.remove();
+            }, duration * 1000);
+        }
+
+        function checkCollisions() {
+            const playerRect = player.getBoundingClientRect();
+            const items = document.querySelectorAll('.coffee, .bug');
+            
+            items.forEach(item => {
+                const itemRect = item.getBoundingClientRect();
+                
+                if (isColliding(playerRect, itemRect)) {
+                    if (item.dataset.type === 'coffee') {
+                        score++;
+                        updateDisplay();
+                        item.remove();
+                        
+                        if (score >= 15) {
+                            endGame(true);
+                        }
+                    } else if (item.dataset.type === 'bug') {
+                        lives--;
+                        updateDisplay();
+                        item.remove();
+                        
+                        if (lives <= 0) {
+                            endGame(false);
+                        }
+                    }
+                }
+            });
+        }
+
+        function isColliding(rect1, rect2) {
+            return !(rect1.right < rect2.left || 
+                     rect1.left > rect2.right || 
+                     rect1.bottom < rect2.top || 
+                     rect1.top > rect2.bottom);
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+            clearInterval(spawnInterval);
+            
+            // Remove all items
+            document.querySelectorAll('.coffee, .bug').forEach(item => item.remove());
+            
+            const resultEmoji = document.getElementById('resultEmoji');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            if (won) {
+                resultEmoji.textContent = '🎉☕💕';
+                resultTitle.textContent = 'You Won!';
+                resultMessage.textContent = "Amazing! You caught enough coffees! ☕ Now let's go on that coffee date! 💕";
+            } else {
+                resultEmoji.textContent = '🐛💻';
+                resultTitle.textContent = 'Game Over!';
+                resultMessage.textContent = "Oops! Time for some debugging practice! 🐛 Want to try again for that coffee date? 😊";
+            }
+            
+            endScreen.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            endScreen.classList.add('hidden');
+            playerPos = 170;
+            player.style.left = playerPos + 'px';
+            startScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
